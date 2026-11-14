@@ -1,0 +1,612 @@
+<main class="battle-page r9-integrated" [class.awaiting-start]="battle.data?.canStart && !battle.data?.player" [attr.aria-busy]="battle.busy">
+  <div class="battle-debris" aria-hidden="true"></div>
+
+  <header class="page-header">
+    <div>
+
+      <h1 class="battle-title" [attr.aria-label]="copy.title">
+        <span class="battle-title-silver">
+          {{ i18n.text('FINAL', 'BATALLA') }}
+        </span>
+        <span class="battle-title-red">
+          {{ i18n.text('BATTLE', 'FINAL') }}
+        </span>
+      </h1>
+
+      <p class="header-subtitle">
+        {{ battle.data?.canStart ? i18n.text('Prepare for the last battle.', 'Prepará tu equipo para el enfrentamiento final.') : isBattleFinished ? i18n.text('The final battle has ended.', 'La batalla finalizó. Consultá el resultado y el relato.') : i18n.text('Choose your hero, prepare an action and select a target.', 'Elegí tu héroe, prepará la acción y seleccioná el objetivo.') }}
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="button-quiet refresh-button header-control-button"
+        (click)="onRefresh()" [disabled]="battle.busy">
+        <span aria-hidden="true">↻</span> {{ copy.refresh }}
+      </button>
+      <ng-container *ngIf="battle.data as headerData">
+        <ng-container *ngIf="headerData.state as headerState">
+          <div class="battle-status-chips" *ngIf="!headerData.canStart" aria-live="polite">
+            <span class="battle-state-chip">{{ battleStatusLabel(headerState.status) }}</span>
+            <span *ngIf="!isBattleFinished && headerState.turnState === 'AWAITING_PLAYER_ACTION'" class="header-turn-chip">{{ i18n.text('YOUR TURN', 'TU TURNO') }}</span>
+            <button *ngIf="headerData.canAbandon && !isBattleFinished" type="button"
+              class="abandon-header-button header-control-button" (click)="onAbandon()" [disabled]="battle.busy">
+              {{ copy.abandon }}
+            </button>
+          </div>
+        </ng-container>
+      </ng-container>
+    </div>
+  </header>
+
+  <div class="feedback-stack" aria-live="polite" *ngIf="battle.loadError || battle.operationError">
+    <section *ngIf="battle.loadError" class="notice error" role="alert">
+      <strong>{{ copy.loadError }}</strong>
+      <p>{{ battle.loadError }}</p>
+      <button type="button" (click)="onRefresh()" [disabled]="battle.busy">{{ copy.retry }}</button>
+    </section>
+    <section *ngIf="battle.operationError" class="notice error" role="alert">
+      <strong>{{ copy.operationError }}</strong><p>{{ battle.operationError }}</p>
+    </section>
+  </div>
+  <p class="initial-loading" *ngIf="battle.status === 'loading' && !battle.data">{{ copy.loading }}</p>
+
+  <ng-container *ngIf="battle.data as data">
+    <section *ngIf="!data.available" class="notice battle-waiting">
+      <p>{{ copy.unavailable }}</p>
+      <a routerLink="/journey/simulate">{{ copy.simulate }}</a>
+    </section>
+
+    <ng-container *ngIf="data.state as state">
+      <section *ngIf="data.canStart && !data.player" class="panel start-panel">
+        <div>
+          <span class="eyebrow">
+            {{ i18n.text('FINAL STAGE', 'ÚLTIMA ETAPA') }}
+          </span>
+          <h2>{{ i18n.text('Ready for the final battle?', '¿Listos para la batalla final?') }}</h2>
+        </div>
+        <button
+          type="button"
+          class="button-primary"
+          (click)="onExecute()"
+          [disabled]="!battle.canExecute"
+        >
+          {{ battle.submitting ? copy.submitting : copy.start }}
+          <span aria-hidden="true">→</span>
+        </button>
+      </section>
+
+      <div class="battle-layout" *ngIf="data.player">
+        <div class="battle-main">
+          <section class="battle-arena" [attr.aria-label]="i18n.text('Battle teams', 'Equipos de la batalla')">
+<section class="panel team-panel player-panel" *ngIf="data.player as player">
+              <header class="team-header">
+                <div>
+                  <span class="team-kicker">
+                    <span class="team-dot ally-dot"></span>
+                    {{ i18n.text('YOUR TEAM', 'TU EQUIPO') }}
+                  </span>
+                  <h2>{{ player.name }}</h2>
+                  
+                  <p>{{ copy.strategy }}: <strong class="strategy-value" [ngClass]="strategyStyle(player.strategyCode)">{{ displayStrategy(player.strategyCode, player.strategyLabel) }}</strong></p>
+                </div>
+                
+              </header>
+
+              <button *ngIf="teamTargetOption('PLAYER') as teamTarget" type="button"
+                class="team-panel-target" [class.target-chosen]="isTeamTargetChosen('PLAYER')"
+                (click)="onTarget(teamTarget.actionId)"
+                [disabled]="battle.busy || battle.status !== 'ready'"
+                [attr.aria-pressed]="isTeamTargetChosen('PLAYER')"
+                [attr.aria-label]="i18n.text('Select your team as target', 'Seleccionar a todo tu equipo como objetivo')">
+                <span class="team-panel-target-chip" aria-hidden="true">
+                  {{ isTeamTargetChosen('PLAYER') ? i18n.text('✓ SELECTED', '✓ ELEGIDO') : i18n.text('◎ TARGET', '◎ OBJETIVO') }}
+                </span>
+              </button>
+              <dl class="resource-chips">
+                <div><dt>{{ copy.synergy }}</dt><dd>{{ synergyLabel(player.synergyCode) }}</dd></div>
+                <div><dt>{{ copy.teamActions }}</dt><dd>{{ player.teamActionsRemaining }}</dd></div>
+                <div><dt>{{ copy.leaderUses }}</dt><dd>{{ player.leaderAbilityUsesRemaining }}</dd></div>
+                <div><dt>{{ copy.strategyChanges }}</dt><dd>{{ player.strategyChangesRemaining }}</dd></div>
+              </dl>
+<section
+                class="formation-block"
+                *ngFor="let formation of formationGroups(player); trackBy: trackFormation"
+                [class.reserve-formation]="formation.code === 'INACTIVE'"
+              >
+                <h3>{{ formation.label }}</h3>
+
+                <ul class="hero-grid">
+                  <li
+                    class="hero-tile"
+                    *ngFor="let hero of formation.heroes; trackBy: trackHero"
+                    [class.legal-target]="battle.isTarget('PLAYER', 'HERO', hero.heroId)"
+                    [class.target-chosen]="isHeroTargetChosen('PLAYER', hero.heroId)"
+                    [class.selected-hero]="battle.selectedHeroId === hero.heroId"
+                    [class.knocked-out]="hero.condition === 'KNOCKED_OUT'"
+                    [class.in-reserve]="formation.code === 'INACTIVE'"
+                    [class.energy-depleted]="hero.currentEnergy === 0 && hero.condition !== 'KNOCKED_OUT'"
+                  >
+                    <button
+                      type="button"
+                      class="hero-portrait-button"
+                      (click)="onHero(hero.heroId)"
+                      [disabled]="battle.submitting || battle.status !== 'ready'"
+                      [attr.aria-pressed]="battle.selectedHeroId === hero.heroId"
+                    >
+                      <div class="avatar-shell">
+                        <img
+                          [src]="artwork.resolve(hero.heroId)"
+                          [alt]="hero.name"
+                          (error)="artwork.useFallback($event)"
+                        />
+                        <span
+                          *ngIf="hero.heroId === player.leaderId"
+                          class="leader-mark"
+                          [attr.title]="i18n.text('Leader', 'Líder')"
+                        >★</span>
+                      </div>
+
+                      <strong>{{ hero.name }}</strong>
+
+                      <div class="hero-numbers">
+                        <span><b aria-hidden="true">⚡</b> {{ i18n.text('Energy', 'Energía') }} {{ hero.currentEnergy }}/{{ hero.maximumEnergy }}</span>
+                        <span><b aria-hidden="true">✦</b> {{ i18n.text('Ability points', 'Puntos de habilidad') }} {{ hero.currentAbilityPoints }}/{{ hero.maximumAbilityPoints }}</span>
+                      </div>
+                      <span class="hero-status-slot">
+                        <span class="hero-condition" *ngIf="hero.condition === 'KNOCKED_OUT'">{{ heroConditionLabel(hero.condition) }}</span>
+                        <span class="energy-warning" *ngIf="hero.currentEnergy === 0 && hero.condition !== 'KNOCKED_OUT'">{{ i18n.text('No energy', 'SIN ENERGÍA') }}</span>
+                        <span *ngIf="showReturnTurn(hero)">{{ copy.returnTurn }}: {{ hero.returnAtTurn }}</span>
+                      </span>
+                    </button>
+
+                    <ng-container *ngIf="!isBattleFinished">
+                      <ng-container *ngIf="battle.selectedActionGroup as selected">
+                        <ng-container *ngFor="let option of selected.options">
+                          <button
+                            *ngIf="option.target !== null && option.target.targetType === 'HERO' && option.target.sideCode === 'PLAYER' && option.target.targetId === hero.heroId"
+                            type="button"
+                            class="hero-target-overlay"
+                            (click)="$event.stopPropagation(); onTarget(option.actionId)"
+                            [class.target-chosen]="battle.selectedActionId === option.actionId"
+                            [attr.aria-pressed]="battle.selectedActionId === option.actionId"
+                            [disabled]="battle.busy || battle.status !== 'ready'"
+                            [attr.aria-label]="i18n.text('Target ', 'Elegir como objetivo a ') + hero.name"
+                          >
+                            <span class="target-ribbon" aria-hidden="true">
+                              {{
+                                battle.selectedActionId === option.actionId
+                                  ? i18n.text('✓ SELECTED', '✓ ELEGIDO')
+                                  : i18n.text('◎ TARGET', '◎ OBJETIVO')
+                              }}
+                            </span>
+                          </button>
+                        </ng-container>
+                      </ng-container>
+                    </ng-container>
+                  </li>
+                </ul>
+              </section>
+
+          </section>
+<section class="panel team-panel opponent-panel" *ngIf="data.opponent as opponent">
+              <header class="team-header">
+                <div>
+                  <span class="team-kicker">
+                    <span class="team-dot enemy-dot"></span>
+                    {{ i18n.text('OPPONENT TEAM', 'EQUIPO RIVAL') }}
+                  </span>
+                  <h2>{{ opponent.name }}</h2>
+                  
+                  <p>{{ copy.strategy }}: <strong class="strategy-value" [ngClass]="strategyStyle(opponent.strategyCode)">{{ displayStrategy(opponent.strategyCode, opponent.strategyLabel) }}</strong></p>
+                </div>
+                <span class="team-turn-chip rival-turn-chip" *ngIf="!isBattleFinished && state.turnState === 'AWAITING_OPPONENT_ACTION'">{{ i18n.text('OPPONENT TURN', 'TURNO DEL RIVAL') }}</span>
+              </header>
+
+              <button *ngIf="teamTargetOption('OPPONENT') as teamTarget" type="button"
+                class="team-panel-target" [class.target-chosen]="isTeamTargetChosen('OPPONENT')"
+                (click)="onTarget(teamTarget.actionId)"
+                [disabled]="battle.busy || battle.status !== 'ready'"
+                [attr.aria-pressed]="isTeamTargetChosen('OPPONENT')"
+                [attr.aria-label]="i18n.text('Select the opponent team as target', 'Seleccionar el equipo rival como objetivo')">
+                <span class="team-panel-target-chip" aria-hidden="true">
+                  {{ isTeamTargetChosen('OPPONENT') ? i18n.text('✓ SELECTED', '✓ ELEGIDO') : i18n.text('◎ TARGET', '◎ OBJETIVO') }}
+                </span>
+              </button>
+              <dl class="resource-chips">
+                <div><dt>{{ copy.synergy }}</dt><dd>{{ synergyLabel(opponent.synergyCode) }}</dd></div>
+                <div><dt>{{ copy.teamActions }}</dt><dd>{{ opponent.teamActionsRemaining }}</dd></div>
+                <div><dt>{{ copy.leaderUses }}</dt><dd>{{ opponent.leaderAbilityUsesRemaining }}</dd></div>
+                <div><dt>{{ copy.strategyChanges }}</dt><dd>{{ opponent.strategyChangesRemaining }}</dd></div>
+              </dl>
+<section
+                class="formation-block"
+                *ngFor="let formation of formationGroups(opponent); trackBy: trackFormation"
+                [class.reserve-formation]="formation.code === 'INACTIVE'"
+              >
+                <h3>{{ formation.label }}</h3>
+
+                <ul class="hero-grid">
+                  <li
+                    class="hero-tile rival-hero"
+                    *ngFor="let hero of formation.heroes; trackBy: trackHero"
+                    [class.legal-target]="battle.isTarget('OPPONENT', 'HERO', hero.heroId)"
+                    [class.target-chosen]="isHeroTargetChosen('OPPONENT', hero.heroId)"
+                    [class.knocked-out]="hero.condition === 'KNOCKED_OUT'"
+                    [class.in-reserve]="formation.code === 'INACTIVE'"
+                    [class.energy-depleted]="hero.currentEnergy === 0 && hero.condition !== 'KNOCKED_OUT'"
+                  >
+                    <div class="hero-portrait-button static-card">
+                      <div class="avatar-shell">
+                        <img
+                          [src]="artwork.resolve(hero.heroId)"
+                          [alt]="hero.name"
+                          (error)="artwork.useFallback($event)"
+                        />
+                        <span
+                          *ngIf="hero.heroId === opponent.leaderId"
+                          class="leader-mark"
+                          [attr.title]="i18n.text('Leader', 'Líder')"
+                        >★</span>
+                      </div>
+
+                      <strong>{{ hero.name }}</strong>
+
+                      <div class="hero-numbers">
+                        <span><b aria-hidden="true">⚡</b> {{ i18n.text('Energy', 'Energía') }} {{ hero.currentEnergy }}/{{ hero.maximumEnergy }}</span>
+                        <span><b aria-hidden="true">✦</b> {{ i18n.text('Ability points', 'Puntos de habilidad') }} {{ hero.currentAbilityPoints }}/{{ hero.maximumAbilityPoints }}</span>
+                      </div>
+                      <span class="hero-status-slot">
+                        <span class="hero-condition" *ngIf="hero.condition === 'KNOCKED_OUT'">{{ heroConditionLabel(hero.condition) }}</span>
+                        <span class="energy-warning" *ngIf="hero.currentEnergy === 0 && hero.condition !== 'KNOCKED_OUT'">{{ i18n.text('No energy', 'SIN ENERGÍA') }}</span>
+                        <span *ngIf="showReturnTurn(hero)">{{ copy.returnTurn }}: {{ hero.returnAtTurn }}</span>
+                      </span>
+                    </div>
+
+                    <ng-container *ngIf="!isBattleFinished">
+                      <ng-container *ngIf="battle.selectedActionGroup as selected">
+                        <ng-container *ngFor="let option of selected.options">
+                          <button
+                            *ngIf="option.target !== null && option.target.targetType === 'HERO' && option.target.sideCode === 'OPPONENT' && option.target.targetId === hero.heroId"
+                            type="button"
+                            class="hero-target-overlay"
+                            (click)="$event.stopPropagation(); onTarget(option.actionId)"
+                            [class.target-chosen]="battle.selectedActionId === option.actionId"
+                            [attr.aria-pressed]="battle.selectedActionId === option.actionId"
+                            [disabled]="battle.busy || battle.status !== 'ready'"
+                            [attr.aria-label]="i18n.text('Target ', 'Elegir como objetivo a ') + hero.name"
+                          >
+                            <span class="target-ribbon" aria-hidden="true">
+                              {{
+                                battle.selectedActionId === option.actionId
+                                  ? i18n.text('✓ SELECTED', '✓ ELEGIDO')
+                                  : i18n.text('◎ TARGET', '◎ OBJETIVO')
+                              }}
+                            </span>
+                          </button>
+                        </ng-container>
+                      </ng-container>
+                    </ng-container>
+                  </li>
+                </ul>
+              </section>
+      </section>
+          </section>
+<section class="panel action-console" [class.compact-commands]="commandCategory === 'attack' || commandCategory === 'support'" *ngIf="data.player">
+            <header class="console-header">
+              <div>
+                <span class="eyebrow">
+                  {{ i18n.text('COMMAND CENTER', 'CENTRO DE COMANDO') }}
+                </span>
+                <h2 *ngIf="!isBattleFinished">{{ i18n.text('Choose your next action', 'Elegí tu próxima acción') }}</h2>
+                <p *ngIf="!isBattleFinished">
+                  {{ copy.selectedHero }}:
+                  <strong>{{ heroName(battle.selectedHeroId) }}</strong>
+                </p>
+              </div>
+
+              <button *ngIf="!isBattleFinished && !confirmingAbandon" type="button"
+                class="button-primary execute-button command-execute-button"
+                (click)="onExecute()" [disabled]="!battle.canExecute">
+                ⚡ {{ battle.submitting ? copy.submitting : copy.execute }}
+              </button>
+            </header>
+
+            <ng-container *ngIf="isBattleFinished; else actionControls">
+              <div class="r9-result" aria-live="polite">
+                <h3>{{ copy.result }}: {{ outcomeLabel }}</h3>
+                <p><strong>{{ copy.completionReason }}:</strong> {{ completionReasonLabel }}</p>
+                <p *ngIf="showEndingDetail"><strong>{{ copy.ending }}:</strong> {{ endingLabel }}</p>
+              </div>
+            </ng-container>
+
+            <ng-template #actionControls>
+              <ng-container *ngIf="confirmingAbandon; else commandSelection">
+                <div class="abandon-confirmation" role="group" [attr.aria-label]="copy.abandonConfirmation">
+                  <h3>{{ copy.abandonConfirmation }}</h3>
+                  <p>{{ i18n.text('The battle will end if you confirm.', 'La batalla terminará si confirmás.') }}</p>
+
+                  <div class="abandon-confirmation-actions">
+                    <button type="button" class="continue-playing-button" (click)="cancelAbandon()" [disabled]="battle.busy">
+                      {{ i18n.text('Continue playing', 'Continuar jugando') }}
+                    </button>
+                    <button type="button" class="confirm-abandon-button" (click)="confirmAbandon()" [disabled]="battle.busy">
+                      {{ copy.abandon }}
+                    </button>
+                  </div>
+                </div>
+              </ng-container>
+              <ng-template #commandSelection>
+              <div
+                class="command-tabs"
+                role="group"
+                [attr.aria-label]="i18n.text('Action categories', 'Categorías de acciones')"
+              >
+                <button
+                  type="button"
+                  [class.active]="commandCategory === 'attack'"
+                  [attr.aria-pressed]="commandCategory === 'attack'"
+                  [disabled]="battle.busy || battle.status !== 'ready'"
+                  (click)="selectCommandCategory('attack')"
+                >⚔ {{ i18n.text('ATTACKS', 'ATAQUES') }}</button>
+
+                <button
+                  type="button"
+                  [class.active]="commandCategory === 'support'"
+                  [attr.aria-pressed]="commandCategory === 'support'"
+                  [disabled]="battle.busy || battle.status !== 'ready'"
+                  (click)="selectCommandCategory('support')"
+                >✚ {{ i18n.text('SUPPORT', 'APOYO') }}</button>
+
+                <button type="button" [class.active]="commandCategory === 'strategy'"
+                  [attr.aria-pressed]="commandCategory === 'strategy'"
+                  [disabled]="battle.busy || battle.status !== 'ready'"
+                  (click)="selectCommandCategory('strategy')">
+                  ⚙ {{ i18n.text('STRATEGY', 'ESTRATEGIA') }}
+                </button>
+
+                <button
+                  type="button"
+                  [class.active]="commandCategory === 'inventory'"
+                  [attr.aria-pressed]="commandCategory === 'inventory'"
+                  [disabled]="battle.busy || battle.status !== 'ready'"
+                  (click)="selectCommandCategory('inventory')"
+                >▣ {{ i18n.text('ITEMS', 'OBJETOS') }}</button>
+              </div>
+
+              <div class="strategy-choice-row" *ngIf="commandCategory === 'strategy' && strategyMode === 'choose'" role="group"
+                [attr.aria-label]="i18n.text('Strategy operations', 'Operaciones de estrategia')">
+                <button type="button"
+                  [disabled]="battle.busy || battle.status !== 'ready'" (click)="selectStrategyMode('change')">
+                  {{ i18n.text('CHANGE STRATEGY', 'CAMBIAR ESTRATEGIA') }}
+                </button>
+                <button type="button"
+                  [disabled]="battle.busy || battle.status !== 'ready'" (click)="selectStrategyMode('swap')">
+                  {{ i18n.text('SWAP HERO', 'CAMBIAR HÉROE') }}
+                </button>
+              </div>
+
+              <div class="command-options">
+                <section *ngIf="commandCategory === 'inventory'" class="inventory-category">
+                  <p *ngIf="data.inventory.length === 0" class="empty-text">{{ copy.noItems }}</p>
+                  <ul class="inventory-list r9-card-list">
+                    <li *ngFor="let item of data.inventory" class="inventory-entry">
+                      <ng-container *ngIf="inventoryGroup(item.itemId) as itemGroup; else unavailableItem">
+                        <ng-container *ngIf="battle.selectedActionGroup === itemGroup; else selectableItem">
+                          <div class="r9-card-choice">
+                            <div class="action-card r9-fixed-card selected-action-inline" aria-live="polite">
+                              <div class="r9-card-head">
+                                <strong class="r9-card-title">{{ item.name }} <span class="item-quantity">×{{ item.quantity }}</span></strong>
+                                <div class="r9-card-selected-tools">
+                                  <span class="micro-label">{{ i18n.text('SELECTED ACTION', 'ACCIÓN ELEGIDA') }}</span>
+                                  <button type="button" class="clear-action" (click)="onClearAction()"
+                                    [disabled]="battle.busy" [attr.aria-label]="i18n.text('Clear action', 'Deseleccionar acción')">
+                                    <span aria-hidden="true">×</span>
+                                  </button>
+                                </div>
+                              </div>
+                              <span class="r9-card-description">{{ item.description }}</span>
+                              <div class="r9-card-info">
+                                <span class="action-cost">{{ copy.cost }}: {{ itemGroup.options[0].cost.abilityPoints }} {{ i18n.text('AP', 'PA') }}</span>
+                                <span class="selected-action-state" [class.ready]="battle.selectedActionId">
+                                  {{ battle.selectedActionId ? i18n.text('Action ready.', 'Acción preparada.') : i18n.text('Choose a legal target.', 'Elegí un objetivo disponible.') }}
+                                </span>
+                              </div>
+                              <ng-container *ngIf="hasOtherTargetOptions(itemGroup) && !battle.selectedActionId">
+                                <ng-container *ngTemplateOutlet="teamTargets; context: { $implicit: itemGroup }"></ng-container>
+                              </ng-container>
+                            </div>
+                          </div>
+                        </ng-container>
+                        <ng-template #selectableItem>
+                          <button type="button" class="action-card r9-fixed-card" (click)="onGroup(itemGroup)"
+                            [disabled]="battle.busy || battle.status !== 'ready'">
+                            <span class="r9-card-head"><strong class="r9-card-title">{{ item.name }} <span class="item-quantity">×{{ item.quantity }}</span></strong></span>
+                            <span class="r9-card-description">{{ item.description }}</span>
+                            <span class="r9-card-info"><span class="action-cost">{{ copy.cost }}: {{ itemGroup.options[0].cost.abilityPoints }} {{ i18n.text('AP', 'PA') }}</span></span>
+                          </button>
+                        </ng-template>
+                      </ng-container>
+                      <ng-template #unavailableItem>
+                        <div class="inventory-item-unavailable" [attr.aria-label]="item.name + ': ' + i18n.text('Not available this turn', 'No disponible en este turno')">
+                          <span class="inventory-symbol" aria-hidden="true">✦</span>
+                          <span class="inventory-item-text">
+                            <strong>{{ item.name }} <span class="item-quantity">×{{ item.quantity }}</span></strong>
+                            <span>{{ item.description }}</span>
+                            <small>{{ i18n.text('Not available this turn', 'No disponible en este turno') }}</small>
+                          </span>
+                        </div>
+                      </ng-template>
+                    </li>
+                  </ul>
+                  <p class="inventory-warning" *ngIf="uncataloguedInventoryGroups.length">
+                    {{ i18n.text('The API also offers uses without an item ID. Their inventory item cannot be identified.', 'La API ofrece acciones sin identificar el objeto que consumen.') }}
+                  </p>
+                </section>
+
+                <ul class="action-list r9-card-list" *ngIf="commandCategory !== 'inventory' || uncataloguedInventoryGroups.length">
+                  <li *ngFor="let group of (commandCategory === 'inventory' ? uncataloguedInventoryGroups : visibleActionGroups); trackBy: trackGroup">
+                    <ng-container *ngIf="battle.selectedActionGroup === group; else unselectedAction">
+                      <div class="r9-card-choice">
+                        <div class="action-card r9-fixed-card selected-action-inline" aria-live="polite">
+                          <div class="r9-card-head">
+                            <strong class="r9-card-title">{{ actionTitle(group) }}</strong>
+                            <div class="r9-card-selected-tools">
+                              <span class="micro-label">{{ i18n.text('SELECTED ACTION', 'ACCIÓN ELEGIDA') }}</span>
+                              <button type="button" class="clear-action" (click)="onClearAction()"
+                                [disabled]="battle.busy" [attr.aria-label]="i18n.text('Clear action', 'Deseleccionar acción')">
+                                <span aria-hidden="true">×</span>
+                              </button>
+                            </div>
+                          </div>
+                          <span class="r9-card-description">{{ actionDescription(group) }}</span>
+                          <div class="r9-card-info">
+                            <span class="action-cost">{{ copy.cost }}: {{ group.options[0].cost.abilityPoints }} {{ i18n.text('AP', 'PA') }}</span>
+                            <span class="selected-action-state" [class.ready]="battle.selectedActionId">
+                              {{ battle.selectedActionId ? i18n.text('Action ready.', 'Acción preparada.') : i18n.text('Choose a legal target.', 'Elegí un objetivo disponible.') }}
+                            </span>
+                          </div>
+                          <ng-container *ngIf="hasOtherTargetOptions(group) && !battle.selectedActionId">
+                            <ng-container *ngTemplateOutlet="teamTargets; context: { $implicit: group }"></ng-container>
+                          </ng-container>
+                        </div>
+                      </div>
+                    </ng-container>
+                    <ng-template #unselectedAction>
+                      <button type="button" class="action-card r9-fixed-card" (click)="onGroup(group)"
+                        [disabled]="battle.busy || battle.status !== 'ready'">
+                        <span class="r9-card-head"><strong class="r9-card-title">{{ actionTitle(group) }}</strong></span>
+                        <span class="r9-card-description">{{ actionDescription(group) }}</span>
+                        <span class="r9-card-info"><span class="action-cost">{{ copy.cost }}: {{ group.options[0].cost.abilityPoints }} {{ i18n.text('AP', 'PA') }}</span></span>
+                      </button>
+                    </ng-template>
+                  </li>
+                </ul>
+                <p *ngIf="commandCategory !== 'inventory' && visibleActionGroups.length === 0 && !(commandCategory === 'strategy' && strategyMode === 'choose')"
+                  class="empty-text">{{ copy.noCategoryActions }}</p>
+              </div>
+
+              <ng-template #teamTargets let-group>
+                <div class="inline-targets" *ngIf="!battle.selectedActionId">
+                  <ng-container *ngFor="let option of group.options">
+                    <button type="button" class="inline-team-target" (click)="onTarget(option.actionId)"
+                      *ngIf="option.target !== null && option.target.targetType !== 'HERO' && option.target.targetType !== 'TEAM' && option.target.targetType !== 'ANTAGONIST'"
+                      [disabled]="battle.busy || battle.status !== 'ready'">{{ readableTargetLabel(option.targetLabel, option.target.sideCode) }}</button>
+                  </ng-container>
+                </div>
+              </ng-template>
+
+                            <p class="command-help" *ngIf="battle.busy" aria-live="polite">
+                {{ battle.submitting ? copy.submitting : copy.refreshing }}
+              </p>
+              </ng-template>
+            </ng-template>
+          </section>
+        </div>
+        <div class="command-sidebar" [class.with-doom]="!!data.special">
+<section class="doom-stage" *ngIf="data.special as special"
+               [class.legal-target]="battle.isTarget('DOOM', 'ANTAGONIST', special.narrativeCharacterId)"
+               [class.target-chosen]="isDoomChosen(special.narrativeCharacterId)"
+               [class.threat-low]="special.threatLevelCode === 'LOW'"
+               [class.doom-defeated]="special.currentEnergy <= 0"
+               [class.threat-medium]="special.threatLevelCode === 'MEDIUM'"
+               [class.threat-high]="special.threatLevelCode === 'HIGH'"
+               [class.threat-critical]="special.threatLevelCode === 'CRITICAL'">
+        <section
+          class="boss-panel"
+
+        >
+          <span class="team-kicker">
+            ◆ {{ i18n.text('SPECIAL THREAT', 'AMENAZA ESPECIAL') }}
+          </span>
+          <h3>
+            {{ readableName(special.narrativeCharacterId) }}
+          </h3>
+          <p *ngIf="special.currentEnergy <= 0" class="doom-condition">{{ heroConditionLabel('KNOCKED_OUT') }}</p>
+          <p>
+            {{ copy.energy }}:
+            <strong>{{ special.currentEnergy }}/{{ special.maximumEnergy }}</strong>
+          </p>
+          <p>
+            {{ copy.threat }}:
+            <strong>{{ threatLevelLabel(special.threatLevelCode) }}</strong>
+          </p>
+
+        </section>
+                <ng-container *ngIf="!isBattleFinished">
+            <ng-container *ngIf="battle.selectedActionGroup as selected">
+              <ng-container *ngFor="let option of selected.options">
+                <button
+                  *ngIf="option.target !== null && option.target.targetType === 'ANTAGONIST' && option.target.sideCode === 'DOOM' && option.target.targetId === special.narrativeCharacterId"
+                  type="button" class="doom-target-overlay" (click)="onTarget(option.actionId)"
+                  [class.target-chosen]="battle.selectedActionId === option.actionId"
+                  [attr.aria-pressed]="battle.selectedActionId === option.actionId"
+                  [disabled]="battle.busy || battle.status !== 'ready'"
+                  [attr.aria-label]="i18n.text('Select Doctor Doom as target', 'Seleccionar a Doctor Doom como objetivo')">
+                  <span class="doom-target-ribbon" aria-hidden="true">{{ battle.selectedActionId === option.actionId
+                    ? i18n.text('✓ SELECTED', '✓ ELEGIDO')
+                    : i18n.text('◎ TARGET', '◎ OBJETIVO') }}</span>
+                </button>
+              </ng-container>
+            </ng-container>
+          </ng-container>
+</section>
+<aside class="panel battle-log" [attr.aria-label]="copy.narrative">
+            <header class="log-header">
+              <div>
+                <span class="eyebrow">
+                  {{ i18n.text('LIVE', 'EN VIVO') }}
+                </span>
+                <h2>{{ copy.narrative }}</h2>
+              </div>
+              <span class="turn-pill">{{ copy.turn }} {{ state.normalTurn }}</span>
+            </header>
+
+            <p *ngIf="data.events.length === 0" class="empty-text">
+              {{ copy.noEvents }}
+            </p>
+
+            <ol class="events" tabindex="0" [attr.aria-label]="copy.narrative">
+              <li
+                *ngFor="let event of latestEvents; trackBy: trackEvent"
+                class="event-entry"
+                [class.event-damage]="event.eventCode.includes('DAMAGE') || event.eventCode.includes('ATTACK')"
+                [class.event-recovery]="event.eventCode.includes('HEAL') || event.eventCode.includes('RECOVER')"
+              >
+                <div class="event-timeline-mark" aria-hidden="true"></div>
+                <div class="event-main">
+                  <div class="event-meta">
+                    <span>{{ copy.turn }} {{ event.turn }}</span>
+                    <span *ngIf="knownPhase(event.phase)">{{ battlePhaseLabel(event.phase) }}</span>
+                  </div>
+
+                  <ng-container *ngIf="event.narrative as narrative; else missingNarrative">
+                    <div *ngIf="narrative.lines.length; else missingNarrative" class="event-story">
+                      <p *ngFor="let line of narrative.lines">
+                        <strong *ngIf="line.speakerId">
+                          {{ heroName(line.speakerId) }}:
+                        </strong>
+                        {{ line.text }}
+                      </p>
+                    </div>
+                  </ng-container>
+
+                  <ng-template #missingNarrative>
+                    <p class="event-fallback">
+                      {{ i18n.text('No narrative is available for this event.', 'No hay un relato disponible para este evento.') }}
+                    </p>
+                  </ng-template>
+                  <details class="technical-details">
+                    <summary>{{ i18n.text('Event details', 'Detalles del evento') }}</summary>
+                    <p>{{ event.eventCode }} · {{ event.messageCode }}</p>
+                    <pre>{{ eventValues(event) }}</pre>
+                  </details>
+                </div>
+              </li>
+            </ol>
+          </aside>
+        </div>
+      </div>
+
+    </ng-container>
+  </ng-container>
+</main>

@@ -1,0 +1,302 @@
+<main class="student-feature-shell knockout-page">
+  <header class="knockout-header">
+    <div class="falcon-hero-content">
+      <div class="falcon-hero-eyebrow">
+        <span class="falcon-status-dot" aria-hidden="true"></span>
+        <span>OPERACIÓN FALCON · R6</span>
+      </div>
+
+      <div class="falcon-hero-heading">
+        <h1 class="page-title">
+          <span class="falcon-title-first">FASE</span>
+          <span class="falcon-title-second">ELIMINATORIA</span>
+        </h1>
+        <p class="page-subtitle">
+          Un solo camino hacia la final. Cada victoria abre
+          una nueva ruta; cada derrota cierra una misión.
+        </p>
+      </div>
+
+      <div class="falcon-hero-footer">
+        <span>FALCON / FLIGHT SYSTEMS</span>
+      </div>
+    </div>
+
+    <div class="falcon-photo" aria-hidden="true">
+      <img src="assets/knockout-stage/falcon-hero.png" alt="" />
+    </div>
+  </header>
+
+  <p *ngIf="!data && !loadError" class="state-card">
+    Cargando datos de la fase eliminatoria...
+  </p>
+
+  <section *ngIf="loadError" class="falcon-error-panel" role="alert" aria-live="polite">
+    <div class="falcon-error-symbol" aria-hidden="true">!</div>
+    <div class="falcon-error-copy">
+      <span class="falcon-error-eyebrow">FALCON / FLIGHT SYSTEMS · R6</span>
+      <h2>CONEXIÓN INTERRUMPIDA</h2>
+      <p>No pudimos recuperar los datos de la fase eliminatoria. Intentá nuevamente en unos instantes.</p>
+    </div>
+  </section>
+
+  <ng-container *ngIf="data as knockout">
+
+    <section class="functional-panel knockout-summary">
+  <div class="mission-header">
+    <div class="mission-heading">
+      <h2>ESTADO DE LA OPERACIÓN</h2>
+      <small>FALCON / FLIGHT SYSTEMS</small>
+    </div>
+
+    <span class="mission-status">
+      {{ knockout.journeyAvailable ? '● ACTIVO' : '● NO DISPONIBLE' }}
+    </span>
+  </div>
+
+  <div class="knockout-stats">
+    <div class="mission-stat mission-team">
+      <img
+        class="mission-emblem"
+        src="assets/knockout-stage/falcon-emblema.png"
+        alt="Emblema de Falcon"
+      />
+      <div class="mission-team-info">
+        <small>EQUIPO</small>
+        <strong>{{ knockout.teamId }}</strong>
+        <span>FLIGHT UNIT · R6</span>
+      </div>
+    </div>
+
+    <div class="mission-stat">
+      <span class="mission-stat-icon">
+  <svg viewBox="0 0 24 24" width="22" height="22"
+       fill="none" stroke="currentColor" stroke-width="1.8"
+       stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 16a9 9 0 0 1 14 0"/>
+    <path d="M8 19a5 5 0 0 1 8 0"/>
+    <circle cx="12" cy="21" r="1" fill="currentColor" stroke="none"/>
+  </svg>
+</span>
+      <small>JOURNEY</small>
+      <strong>{{ knockout.journeyAvailable ? 'ONLINE' : 'OFFLINE' }}</strong>
+    </div>
+
+    <div class="mission-stat">
+      <span class="mission-stat-icon">
+  <svg viewBox="0 0 24 24" width="22" height="22"
+       fill="none" stroke="currentColor" stroke-width="1.8"
+       stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="4" width="7" height="7" rx="1"/>
+    <rect x="14" y="4" width="7" height="7" rx="1"/>
+    <rect x="3" y="15" width="7" height="7" rx="1"/>
+    <rect x="14" y="15" width="7" height="7" rx="1"/>
+  </svg>
+</span>
+      <small>ETAPAS</small>
+      <strong>{{ knockout.stageCount }}</strong>
+    </div>
+
+    <div class="mission-stat">
+      <span class="mission-stat-icon">⚔</span>
+      <small>ENCUENTROS</small>
+      <strong>{{ knockout.encounterCount }}</strong>
+    </div>
+  </div>
+
+  <div class="mission-footer">
+    <span></span>
+    <small>FLIGHT SYSTEMS / R6</small>
+  </div>
+
+</section>
+    <section
+  *ngIf="!knockout.journeyAvailable"
+  class="falcon-waiting-panel"
+  aria-label="Estado de la fase eliminatoria"
+>
+  <div class="falcon-waiting-emblem" aria-hidden="true">
+    <img
+      src="assets/knockout-stage/falcon-emblema.png"
+      alt=""
+    />
+  </div>
+
+  <div class="falcon-waiting-content">
+    <span class="falcon-waiting-eyebrow">
+      OPERACIÓN FALCON · R6
+    </span>
+
+    <h2>MISIÓN EN ESPERA</h2>
+
+    <p>
+      La fase eliminatoria todavía no comenzó.
+      Los enfrentamientos y el camino hacia la Gran Final
+      se mostrarán cuando se completen las simulaciones.
+    </p>
+
+    <span class="falcon-waiting-status">
+      <span class="falcon-waiting-dot" aria-hidden="true"></span>
+      ESTADO · SIN SIMULACIÓN
+    </span>
+  </div>
+</section>
+
+    <ng-container *ngIf="knockout.journeyAvailable">
+      <p *ngIf="!knockout.rounds?.length" class="state-card">
+        Todavía no hay enfrentamientos eliminatorios disponibles.
+      </p>
+      <section id="r6-selector-v2" *ngIf="knockout.journeyAvailable" aria-label="Control de etapas">
+        <div class="r6-v2-top"><span class="r6-v2-title">⚡ CONTROL DE ETAPAS</span><span class="r6-v2-system">FALCON / FLIGHT SYSTEMS · R6</span></div>
+        <nav class="r6-v2-nav" aria-label="Seleccionar etapa">
+          <button type="button" class="r6-v2-btn" *ngFor="let stage of stageOptions" [class.active]="selectedStage === stage.value" [attr.aria-pressed]="selectedStage === stage.value" (click)="selectStage(stage.value)">{{ stage.label }}</button>
+        </nav>
+        <div class="r6-v2-details" *ngIf="selectedStage !== -1">
+          <div class="r6-v2-detail-heading"><strong class="r6-v2-selected-title">{{ selectedStage === 3 ? 'GRAN FINAL' : stageOptions[selectedStage + 1].label }}</strong><small class="r6-v2-counter">{{ selectedStage === 3 ? 1 : selectedMatches.length }} {{ selectedStage === 3 ? 'ENCUENTRO' : 'ENCUENTROS' }}</small></div>
+          <div class="r6-v2-grid" [class.r6-no-grid]="selectedStage !== 3">
+            <div class="r6-final-arena" *ngIf="selectedStage === 3 && knockout.finalists as finalists">
+              <div class="r6-final-heading">🏆 ENCUENTRO DEFINITIVO</div>
+              <div class="r6-final-battle">
+                <div class="r6-final-team falcon" [class.win]="finalOutcome === 'VICTORY'" [class.loss]="finalOutcome === 'DEFEAT'" [class.pending]="!finalOutcome">
+                  <div class="r6-final-content"><div class="r6-final-name">{{ getTeamName(finalists.playerTeamId) }}</div><div class="r6-final-badge">{{ finalOutcome === 'VICTORY' ? '🏆 CAMPEÓN' : finalOutcome === 'DEFEAT' ? 'DERROTA' : 'PENDIENTE' }}</div></div>
+                  <span class="r6-final-particle" *ngFor="let particle of particles" [style.--x]="particle.x" [style.--size]="particle.size" [style.--duration]="particle.duration" [style.--delay]="particle.delay"></span>
+                </div>
+                <div class="r6-final-center"><div class="r6-final-vs">VS</div></div>
+                <div class="r6-final-team" [class.win]="finalOutcome === 'DEFEAT'" [class.loss]="finalOutcome === 'VICTORY'" [class.pending]="!finalOutcome">
+                  <div class="r6-final-content"><div class="r6-final-name">{{ getTeamName(finalists.opponentTeamId) }}</div><div class="r6-final-badge">{{ finalOutcome === 'DEFEAT' ? '🏆 CAMPEÓN' : finalOutcome === 'VICTORY' ? 'DERROTA' : 'PENDIENTE' }}</div></div>
+                  <span class="r6-final-particle" *ngFor="let particle of particles" [style.--x]="particle.x" [style.--size]="particle.size" [style.--duration]="particle.duration" [style.--delay]="particle.delay"></span>
+                </div>
+              </div>
+              <div class="r6-final-footer">{{ finalOutcome ? 'FINALIZADO · GANADOR:' : 'FINAL PENDIENTE' }} <strong *ngIf="finalOutcome">{{ getTeamName(finalOutcome === 'VICTORY' ? finalists.playerTeamId : finalists.opponentTeamId) }}</strong></div>
+            </div>
+          </div>
+        </div>
+        <section id="r6-v7-compatible-analysis" *ngIf="selectedStage >= 0 && selectedStage < 3">
+          <div class="v7-header"><div><div class="v7-title">⚡ CENTRO DE ANÁLISIS DE COMBATES</div><div class="v7-sub">{{ stageOptions[selectedStage + 1].label }} · DATOS REALES DEL BACKEND</div></div><div class="v7-counter">{{ selectedMatches.length }} ENCUENTROS</div></div>
+          <div class="v7-grid">
+            <details *ngFor="let match of selectedMatches; let i = index" [class.falcon]="isFalconMatch(match)">
+              <summary><div class="v7-top"><span>ENCUENTRO {{ (i + 1).toString().padStart(2, '0') }}{{ isFalconMatch(match) ? ' · FALCON' : '' }}</span><span class="v7-badge" [class.ko]="match.resolutionCode === 'TOTAL_KO'">{{ resolutionLabel(match.resolutionCode) }}</span></div>
+                <div class="v7-teams"><span class="v7-team" [class.winner]="match.winnerTeamId === match.teamAId" [class.falcon]="match.teamAId === 'falcon'">{{ getTeamName(match.teamAId) }}</span><span class="v7-vs">VS</span><span class="v7-team" [class.winner]="match.winnerTeamId === match.teamBId" [class.falcon]="match.teamBId === 'falcon'">{{ getTeamName(match.teamBId) }}</span></div><div class="v7-expand">▼ VER ESTADÍSTICAS</div>
+              </summary>
+              <div class="v7-body"><div class="v7-section">ANÁLISIS DE DAÑO</div>
+                <div class="v7-stat" *ngFor="let teamId of [match.teamAId, match.teamBId]"><div class="v7-statline"><strong>{{ getTeamName(teamId) }} · {{ match.winnerTeamId === teamId ? 'WIN' : match.winnerTeamId ? 'LOSS' : 'PENDIENTE' }}</strong><strong>{{ getDamage(match, teamId) === null ? 'SIN DATOS' : (getDamage(match, teamId) | number:'1.0-0') }}</strong></div><div class="v7-track"><div class="v7-fill" [class.winner]="match.winnerTeamId === teamId" [class.falcon]="teamId === 'falcon'" [style.width.%]="getDamagePercent(match, teamId)"></div></div></div>
+                <div class="v7-result">RESOLUCIÓN: <strong>{{ resolutionLabel(match.resolutionCode) }}</strong> · GANADOR: <strong>{{ getTeamName(match.winnerTeamId) }}</strong></div>
+              </div>
+            </details>
+          </div>
+        </section>
+        <details id="r6-final-stats-compact" class="r6-final-stats-show" *ngIf="selectedStage === 3 && knockout.finalists as finalists">
+          <summary>📊 VER ESTADÍSTICAS DE LA FINAL ▾</summary>
+          <div class="r6-compact-body"><div>Equipo del jugador: <strong>{{ getTeamName(finalists.playerTeamId) }}</strong></div><div>Rival: <strong>{{ getTeamName(finalists.opponentTeamId) }}</strong></div><div>Estado: <strong>{{ finalStatus || 'PENDIENTE' }}</strong></div><div>Resultado de Falcon: <strong>{{ finalOutcome === 'VICTORY' ? 'VICTORIA' : finalOutcome === 'DEFEAT' ? 'DERROTA' : 'PENDIENTE' }}</strong></div><div *ngIf="finalOutcome">Campeón: <strong>{{ getTeamName(finalOutcome === 'VICTORY' ? finalists.playerTeamId : finalists.opponentTeamId) }}</strong></div></div>
+        </details>
+      </section>
+      <section
+        *ngIf="(knockout.rounds?.length ?? 0) > 0"
+        class="knockout-bracket" [style.display]="selectedStage === -1 ? null : 'none'"
+        aria-label="Llave eliminatoria"
+      >
+        <svg
+          class="knockout-connections"
+          aria-hidden="true"
+          preserveAspectRatio="none"
+          [attr.viewBox]="'0 0 ' + connectionWidth + ' ' + connectionHeight"
+        >
+          <path
+            *ngFor="let path of connectionPaths"
+            [attr.d]="path"
+            class="knockout-connection-path"
+          ></path>
+        </svg>
+
+        <article
+          *ngFor="let round of knockout.rounds"
+          class="functional-panel knockout-round"
+        >
+          <h2 class="panel-title">
+            {{
+              round.stageCode === 'ROUND_OF_16'
+                ? 'Octavos de final'
+                : round.stageCode === 'QUARTERFINAL'
+                ? 'Cuartos de final'
+                : round.stageCode === 'SEMIFINAL'
+                ? 'Semifinales'
+                : round.stageCode
+            }}
+          </h2>
+
+          <div class="knockout-matches">
+            <article
+              *ngFor="let match of round.matches"
+              class="knockout-match"
+              [class.knockout-player-match]="isFalconMatch(match)"
+              [attr.data-stage-code]="round.stageCode"
+              [attr.data-slot]="match.slot"
+            >
+              <span
+                class="knockout-match-label"
+                [attr.aria-label]="'Enfrentamiento ' + match.slot"
+              >
+                {{ match.slot < 10 ? '0' + match.slot : match.slot }}
+              </span>
+
+              <div
+                class="knockout-team"
+                [class.knockout-winner]="match.winnerTeamId === match.teamAId"
+                [class.knockout-player-team]="isPlayerTeam(match.teamAId)"
+              >
+                <span>{{ getTeamName(match.teamAId) }}</span>
+                <small *ngIf="isPlayerTeam(match.teamAId)" class="knockout-player-tag">TU EQUIPO</small>
+                <strong *ngIf="match.winnerTeamId === match.teamAId">Ganador</strong>
+              </div>
+
+              <div
+                class="knockout-team"
+                [class.knockout-winner]="match.winnerTeamId === match.teamBId"
+                [class.knockout-player-team]="isPlayerTeam(match.teamBId)"
+              >
+                <span>{{ getTeamName(match.teamBId) }}</span>
+                <small *ngIf="isPlayerTeam(match.teamBId)" class="knockout-player-tag">TU EQUIPO</small>
+                <strong *ngIf="match.winnerTeamId === match.teamBId">Ganador</strong>
+              </div>
+
+              <span class="knockout-match-status" [class.is-completed]="!!match.winnerTeamId">
+                {{ getMatchStatus(match) }}
+              </span>
+            </article>
+          </div>
+        </article>
+        <article
+          *ngIf="knockout.finalists as finalists"
+          class="functional-panel knockout-round knockout-final-round"
+        >
+          <h2 class="panel-title">Gran final</h2>
+
+          <div class="knockout-matches">
+            <article class="knockout-match" data-stage-code="FINAL" data-slot="1" [class.knockout-player-match]="true">
+              <span class="knockout-match-label">F</span>
+
+              <div class="knockout-team knockout-player-team">
+                <span>{{ getTeamName(finalists.playerTeamId) }}</span>
+                <small class="knockout-player-tag">TU EQUIPO</small>
+              </div>
+
+              <div class="knockout-team">
+                <span>{{ getTeamName(finalists.opponentTeamId) }}</span>
+              </div>
+
+              <span class="knockout-match-status" [class.is-completed]="finalStatus === 'COMPLETED'">{{ finalStatus === 'COMPLETED' ? 'COMPLETADO' : 'PENDIENTE' }}</span>
+              <span class="r6-final-result-badge"
+                    [class.r6-result-victory]="finalOutcome === 'VICTORY'"
+                    [class.r6-result-defeat]="finalOutcome === 'DEFEAT'"
+                    [class.r6-result-pending]="finalOutcome !== 'VICTORY' && finalOutcome !== 'DEFEAT'">
+                {{ finalOutcome === 'VICTORY' ? '✓ VICTORIA' : finalOutcome === 'DEFEAT' ? '✕ DERROTA' : '◷ PENDIENTE' }}
+              </span>
+            </article>
+          </div>
+        </article>
+      </section>
+
+      
+    </ng-container>
+  </ng-container>
+</main>
