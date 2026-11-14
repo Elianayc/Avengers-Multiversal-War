@@ -1,403 +1,317 @@
-# Trabajo Práctico Integrador — Programación III UTN
+# Avengers: Multiversal War — Web Platform & Final Battle Engine
 
-## Avengers: Multiversal War
+Full-stack web application designed for tournament progression tracking, detailed encounter inspection, and real-time turn-based combat for the Avengers Multiversal Tournament.
 
----
-
-## El desafío
-
-Galactus ha sido derrotado.
-
-Después de que los Cuatro Fantásticos lograran detener al Devorador de Mundos,
-Silver Surfer abandonó la Tierra y volvió a recorrer el cosmos. Por un breve
-momento, parecía que el peligro había terminado.
-
-Pero cerca de los límites del Sistema Solar, Silver Surfer se encontró con
-Dormammu, soberano de la Dimensión Oscura.
-
-Dormammu asegura que el antiguo acuerdo que impedía su avance ha sido roto y
-acusa a Doctor Strange de no haber cumplido la promesa que mantenía protegida a
-la Tierra.
-
-Esta vez, la amenaza no alcanza solamente a nuestro mundo. Las barreras que
-separan las distintas realidades están en peligro y el multiverso entero podría
-quedar expuesto a la Dimensión Oscura.
-
-Silver Surfer regresa a la Tierra con una advertencia:
-
-> ningún héroe puede enfrentar solo lo que se aproxima.
-
-Su respuesta es organizar el desafío más grande que los héroes hayan enfrentado:
-el **Torneo Multiversal**.
-
-- **32 Leaders**
-- **32 Teams**
-- **6 Heroes por Team**
-
-Cada Leader deberá reunir un equipo de seis héroes y atravesar un torneo en el
-que se pondrán a prueba su fuerza, resistencia, estrategia y capacidad para
-trabajar juntos.
-
-Fase de Grupos. Eliminatorias. Una Final.
+The system implements a decoupled three-tier architecture based on the Backend for Frontend (BFF) pattern, consuming an authoritative external Game API while maintaining domain integrity and eliminating unnecessary local persistence.
 
 ---
 
-## Tu misión
-
-A tu grupo le será asignado un **Team del Torneo Multiversal** mediante el ID del
-personaje que lo identifica.
-
-Ese personaje definirá la identidad del Team durante todo el Trabajo Práctico.
-
-A partir de allí deberán construir la aplicación que permitirá formar el equipo,
-elegir a sus héroes, definir estrategias, atravesar el torneo y prepararse para
-el desafío final.
-
-**Tu equipo será el encargado de enfrentar este desafío.**
-
-El Torneo Multiversal está por comenzar.
+## Language Navigation
+* [Versión en Español](#versión-en-español)
+* [English Version](#english-version)
 
 ---
 
-## Integrantes del grupo
+# Versión en Español
 
-Cada grupo estará formado por **10 integrantes** y tendrá asignado un Team del
-Torneo Multiversal.
+Plataforma web integral diseñada para la simulación, inspección cronológica y combate por turnos en tiempo real del Torneo Multiversal de Avengers.
 
-### Equipo asignado
+El sistema implementa una arquitectura desacoplada de tres capas orientada al patrón Backend for Frontend (BFF), consumiendo la autoridad de juego de una API externa sin alterar sus reglas de dominio ni duplicar persistencia.
 
-**TEAM_ID:** `falcon`
+## Demostración en Video: Batalla Final (R9)
 
-El personaje asignado identifica al Team que utilizará el grupo durante todo el
-Trabajo Práctico.
+Visualización del motor de combate en vivo interactuando con la API oficial: resolución de turnos, validación de habilidades y objetivos legales, actualización de estados de recursos (Energy y AP) y gestión de narrativa en tiempo real.
 
-Este valor debe configurarse en:
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=qKYB2739Z0I">
+    <img src="https://img.youtube.com/vi/qKYB2739Z0I/hqdefault.jpg" alt="Reproducir demostración de la Batalla Final R9" width="85%">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=qKYB2739Z0I">▶ Ver demostración de la Batalla Final en YouTube</a>
+  ·
+  <a href="https://github.com/Elianayc/Avengers-Multiversal-War/blob/main/docs/R9/final_battle.mp4">Video MP4 en el repositorio</a>
+</p>
+
+## Alcance y Autoría Técnica
+
+En este proyecto asumí el liderazgo técnico integral, la arquitectura de integración y el desarrollo de punta a punta de los dos módulos centrales del sistema:
+
+1. **Camino del Equipo (R7):** Módulo individual de lectura cronológica y análisis táctico (Frontend Angular y BFF NestJS), normalizando datos sin duplicar rosters y permitiendo la inspección detallada de encuentros, rondas y eventos.
+2. **Batalla Final (R9):** Motor de combate interactivo por turnos en tiempo real. Diseñé la arquitectura técnica, los contratos de comunicación y la implementación completa de punta a punta (controlador NestJS, servicios de orquestación, gestión de estado reactivo en Angular, cumplimiento estricto del protocolo `actionId` y sincronización atómica de eventos post-acción). Además, coordiné el aseguramiento de calidad, testing funcional de integración y soporte técnico continuo sobre el flujo general del sistema.
+
+## Arquitectura del Sistema
 
 ```text
-backend/avengers-back/.env
+┌──────────────────────────────────────────────┐
+│          Angular Frontend (Cliente)          │
+│   Components · Feature Services · RxJS UI    │
+└──────────────────────┬───────────────────────┘
+                       │ HTTP (Contratos Tipados Propios)
+                       ▼
+┌──────────────────────────────────────────────┐
+│            NestJS Backend (BFF)              │
+│  Controllers · Services · Composición Async │
+└──────────────────────┬───────────────────────┘
+                       │ HTTP (REST / JSON)
+                       ▼
+┌──────────────────────────────────────────────┐
+│           Avengers Game API Oficial          │
+│  Reglas de Juego · RNG · SQLite · Narrativa  │
+└──────────────────────────────────────────────┘
 ```
 
-mediante la variable:
+### Principios de Ingeniería Aplicados
 
-```env
-TEAM_ID=<id-del-personaje-asignado>
-```
+* **Separación de Responsabilidades:** El cliente Angular no se comunica directamente con la API externa; consume exclusivamente endpoints adaptados y tipados provistos por el BFF.
+* **Composición Concurrente:** Agregación de micro-recursos independientes mediante `Promise.all` en el backend para reducir latencias de red.
+* **Manejo de Ciclo de Vida y Suscripciones:** Prevención activa de condiciones de carrera y fugas de memoria mediante la cancelación explícita de suscripciones (`Subscription.unsubscribe()`).
+* **Seguridad y Validación en Backend:** Verificación de pertenencia de equipos para evitar la manipulación de identificadores por URL, respondiendo con excepciones HTTP 404 estructuradas.
 
-### Tech Lead
+## Módulos Desarrollados
 
-Debido a la cantidad de alumnos y grupos del curso, la cátedra utilizará al
-Tech Lead como principal punto de contacto para realizar seguimientos y
-consultas sobre el estado del proyecto.
+### 1. R7 — Camino del Equipo (Team Journey)
 
-Uno de los integrantes del equipo asumirá este rol y será responsable de
-coordinar técnicamente el trabajo del grupo, organizar las integraciones entre
-funcionalidades y facilitar la comunicación con la cátedra.
+* **Objetivo:** Visualizar el progreso del equipo asignado (Falcon) a lo largo del torneo e inspeccionar el detalle táctico de cada combate (rondas, iniciativas, daño y eventos).
+* **BFF (NestJS):**
+  * `getJourney()`: Orquesta en paralelo la consulta de estado, rosters y catálogo. Compone los nombres de héroes mediante diccionarios locales (`Record<string, string>`) para no duplicar datos y filtra los encuentros donde participa el equipo. Mapea el daño recibido a partir de los datos emitidos por el rival.
+  * `getEncounter(id)`: Endpoint parametrizado `@Get('encounters/:encounterId')`. Valida la participación del equipo y arroja `NotFoundException` (404) si se intenta consultar una pelea ajena.
+* **Frontend (Angular):**
+  * Estados visuales desacoplados: `status` (timeline general) y `detailStatus` (detalle de pelea) para evitar bloqueos visuales durante la carga asincrónica.
+  * `selectRound(index)`: Navegación sincrónica en memoria sobre las rondas ya descargadas.
+  * `buildEventGroups()`: Algoritmo de presentación que asocia acciones (`ACTION`) con sus consecuencias (`DAMAGE`, `KO`, `HEAL`) para generar un log secuencial legible sin alterar los datos del juego.
 
-Entre sus responsabilidades se incluyen:
+Documentación y diagramas técnicos de R7:
 
-- Coordinar la división de tareas y el avance general del TP.
-- Supervisar la integración entre las distintas funcionalidades.
-- Validar que el proyecto pueda ejecutarse correctamente de punta a punta.
-- Centralizar consultas técnicas y comunicación con la cátedra.
-- Ayudar a destrabar problemas técnicos dentro del equipo.
+* [Documentación interna detallada de R7 (README)](https://github.com/Elianayc/Avengers-Multiversal-War/blob/main/frontend/avengers-front/src/app/features/journey/team-journey/README.md)
+* [Flujo de Datos (Data Flow)](./docs/R7/data_flow.png)
+* [Mapa Mental de Componentes](./docs/R7/mind_map.png)
 
-**Nombre del Tech Lead:** `Agustín Montero`
+<p align="center">
+  <img src="./docs/R7/data_flow.png" alt="Data Flow R7" width="85%">
+</p>
 
-### Integrantes por funcionalidad
+### 2. R9 — Motor de Batalla Final (Final Battle)
 
-Cada integrante deberá desarrollar **una funcionalidad individual completa**.
+* **Objetivo:** Ejecutar la final del torneo en tiempo real mediante un flujo de interacción por turnos gobernado por las acciones legales declaradas por el servidor.
+* **Protocolo de Comandos y Manejo de `actionId`:**
+  * El frontend consulta las acciones legales (`GET .../actions`). Cada habilidad viene identificada con un `actionId` opaco provisto por la Game API.
+  * Al confirmar una orden, el cliente envía `POST .../play` con el payload `{ type: "CHOOSE_ACTION", actionId }` sin recalcular costos ni daño localmente.
+* **Ciclo de Vida del Combate:**
+  * Estados del combate: `READY` (esperando inicio con comando `START`), `ACTIVE` (combate en progreso con selección de héroe, habilidad y objetivo legal) y `COMPLETED` (resolución terminal: `VICTORY`, `DEFEAT` o `ABANDON`).
+  * Sincronización post-acción: Ejecución inmediata de consultas paralelas para refrescar el estado del equipo propio, el estado del rival y la narrativa del turno.
 
-Además, **todos los integrantes del grupo deberán participar en el desarrollo de
-R9 — Batalla Final**.
+Diagrama técnico de R9:
 
-En las funcionalidades individuales, **Integrante** identifica a quien la
-desarrolla. Para R9, completen ese campo con quien coordinará el seguimiento
-(se recomienda al Tech Lead); la implementación sigue siendo responsabilidad
-de los diez integrantes.
+* [Flujo de Combate (Data Flow)](./docs/R9/data_flow.jpeg)
 
-| # | Integrante | Funcionalidad | Sección | Responsabilidad |
-| ---: | --- | --- | --- | --- |
-| 1 | `[Facundo Roman]` | R2 — Historia y Rivales | Equipo | Individual |
-| 2 | `Fernando Mavit` | R3 — Configurar Equipo | Equipo | Individual |
-| 3 | `[Santiago Arlia]` | R5 — Fase de Grupos | Camino | Individual |
-| 4 | `Ignacio Morales` | R6 — Fase Eliminatoria | Camino | Individual |
-| 5 | `Eliana Yasmin Carro` | R7 — Camino del Equipo | Camino | Individual |
-| 6 | `Leonel Isaias Ibarra` | R8 — Preparar Batalla Final | Batalla Final | Individual |
-| 7 | `Grupal` | R9 — Batalla Final | Batalla Final | Grupal |
-| 8 | `[Facundo Ivan Atienza]` | R10 — Eventos en Vivo | Batalla Final | Individual |
-| 9 | `Agustín Montero` | R11 — Estado del Equipo | Batalla Final | Individual |
-| 10 | `[Valentin Penayo]` | R12 — Estadísticas y Premios | Resultados | Individual |
-| 11 | `[Luz Martinez]` | R13 — Historial | Resultados | Individual |
+<p align="center">
+  <img src="./docs/R9/data_flow.jpeg" alt="Data Flow R9" width="85%">
+</p>
 
-> **R9 — Batalla Final es obligatoria para la aprobación del TP y responsabilidad
-del grupo completo.**
->
-> Los diez integrantes deben participar de su desarrollo además de completar su
-> funcionalidad individual. La Batalla Final debe poder jugarse de principio a
-> fin sin errores.
+## Endpoints del Backend for Frontend (BFF)
+
+| Módulo | Método | Endpoint | Contrato de Retorno | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| **R7** | `GET` | `/journey/team` | `ResponseObject<TeamJourneyModel>` | Resumen del camino, equipos consolidados y timeline |
+| **R7** | `GET` | `/journey/team/encounters/:encounterId` | `ResponseObject<TeamJourneyDetailModel>` | Rondas, eventos y narrativa del encuentro |
+| **R9** | `GET` | `/final-battle/status` | `ResponseObject<FinalStageStatus>` | Estado del ciclo de vida de la final (READY / ACTIVE / COMPLETED) |
+| **R9** | `GET` | `/final-battle/actions` | `ResponseObject<LegalActions>` | Lista de acciones legales y objetivos vigentes |
+| **R9** | `POST` | `/final-battle/play` | `ResponseObject<TurnOutcome>` | Envío de comandos de combate (`START`, `CHOOSE_ACTION`, `ABANDON`) |
+| **R9** | `GET` | `/final-battle/events` | `ResponseObject<CombatEvents>` | Registro narrativo y eventos mecánicos del turno |
+
+## Stack Tecnológico
+
+* **Frontend:** Angular 17+, TypeScript, RxJS, HTML5 semántico, CSS Grid y Flexbox mediante tokens y variables personalizadas.
+* **Backend:** NestJS, TypeScript, Axios / HttpModule, Swagger OpenAPI (`@nestjs/swagger`), arquitectura modular y filtros de excepciones globales.
+* **Estándares:** Tipado estricto sin uso de `any`, ESLint, Prettier y principios SOLID.
+
+## Ejecución Local
+
+1. Configurar variables de entorno (`backend/avengers-back/.env`):
+
+   ```env
+   PORT=3000
+   TEAM_ID=falcon
+   APP_LANG=es
+   GAME_API_BASE_URL=http://localhost:8080/game
+   ```
+
+2. Ejecutar Backend:
+
+   ```bash
+   cd backend/avengers-back
+   npm install
+   npm run start:dev
+   ```
+
+3. Ejecutar Frontend:
+
+   ```bash
+   cd frontend/avengers-front
+   npm install
+   npm run start
+   ```
+
+## Documentación Académica Oficial
+
+La documentación provista por la cátedra de Programación III (UTN), consignas originales, guías técnicas y el archivo README institucional del equipo se encuentran archivados en la carpeta `docs/academic/`:
+
+* [README Académico Original](./docs/academic/README.academic.md)
+* [Enunciado Oficial V2 (PDF)](./docs/academic/AVENGERS_MULTIVERSAL_WAR_ENUNCIADO_V2.pdf)
+* [Guía Técnica Oficial V2 (PDF)](./docs/academic/AVENGERS_MULTIVERSAL_WAR_GUIA_TECNICA_V2.pdf)
+* [Requerimientos Técnicos V2 (PDF)](./docs/academic/AVENGERS_MULTIVERSAL_WAR_REQUERIMIENTOS_TECNICOS_V2.pdf)
 
 ---
 
-## Funcionalidades provistas por la cátedra
+# English Version
 
-El proyecto incluye dos funcionalidades completas que funcionan como referencia
-para desarrollar el resto del Trabajo Práctico:
+Comprehensive web platform engineered for tournament progression tracking, detailed encounter inspection, and real-time turn-based combat for the Avengers Multiversal War Tournament.
 
-- **R1 — Héroes**
-- **R4 — Simular Batallas**
+The system implements a strictly decoupled three-tier architecture following the Backend for Frontend (BFF) pattern, consuming an authoritative external Game API without altering domain rules or duplicating persistence layers.
 
-Estas funcionalidades muestran el patrón esperado de arquitectura e
-integración:
+## Video Demonstration: Final Battle (R9)
+
+Real-time demonstration of the live combat engine interacting with the official Game API: turn execution, legal ability and target validation, reactive resource state updates (Energy and AP), and localized event narration streaming.
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=qKYB2739Z0I">
+    <img src="https://img.youtube.com/vi/qKYB2739Z0I/hqdefault.jpg" alt="Play the Final Battle R9 demonstration" width="85%">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=qKYB2739Z0I">▶ Watch the Final Battle demonstration on YouTube</a>
+  ·
+  <a href="https://github.com/Elianayc/Avengers-Multiversal-War/blob/main/docs/R9/final_battle.mp4">MP4 video in the repository</a>
+</p>
+
+## Technical Ownership & Scope
+
+In this project, I took full technical ownership, architecture design, and end-to-end development of the system's two core modules:
+
+1. **Team Journey (R7):** Individual end-to-end module (Angular Frontend and NestJS BFF) for chronological journey tracking, non-duplicate roster normalization, and detailed tactical encounter analysis.
+2. **Final Battle Engine (R9):** Real-time interactive combat module. I designed the technical architecture, communication contracts, and full implementation (NestJS controller, orchestration services, reactive UI state management in Angular, strict `actionId` protocol enforcement, and atomic post-turn event synchronization). Additionally, I coordinated end-to-end integration testing, QA validation, and continuous technical alignment across the system.
+
+## System Architecture
 
 ```text
-Angular
-    ↓
-NestJS BFF
-    ↓
-Avengers Game API
+┌──────────────────────────────────────────────┐
+│           Angular Frontend (Client)          │
+│   Components · Feature Services · RxJS UI    │
+└──────────────────────┬───────────────────────┘
+                       │ HTTP (Typed Custom Contracts)
+                       ▼
+┌──────────────────────────────────────────────┐
+│            NestJS Backend (BFF)              │
+│  Controllers · Services · Async Composition  │
+└──────────────────────┬───────────────────────┘
+                       │ HTTP (REST / JSON)
+                       ▼
+┌──────────────────────────────────────────────┐
+│           Official Avengers Game API         │
+│  Game Rules · RNG · SQLite Authority · Story │
+└──────────────────────────────────────────────┘
 ```
 
-Antes de comenzar el desarrollo de una funcionalidad, estudien cómo están
-implementadas **Héroes** y **Simular Batallas**.
+### Applied Engineering Principles
 
-**Las funcionalidades provistas no deben modificarse.**
+* **Separation of Concerns:** The Angular client has zero direct coupling with the external Game API; it exclusively consumes tailored, strongly-typed endpoints exposed by the NestJS BFF.
+* **Concurrent Aggregation:** Parallel dispatching of micro-resources via `Promise.all` in the backend to minimize network latency.
+* **Subscription Lifecycle Management:** Active prevention of race conditions and memory leaks through explicit unsubscription (`Subscription.unsubscribe()`).
+* **Server-Side Security:** Backend-level validation to prevent URL tampering, returning structured HTTP 404 `NotFoundException` errors on unauthorized match IDs.
 
----
+## Implemented Features
 
-## Funcionalidades del Trabajo Práctico
+### 1. R7 — Team Journey
 
-### Equipo
+* **Scope:** Chronologically explore the active Journey of the configured team (Falcon) across tournament stages and inspect the tactical details of completed encounters (rounds, initiative, damage, and combat logs).
+* **BFF (NestJS):**
+  * `getJourney()`: Aggregates attempt status, rosters, and hero catalogs concurrently. Normalizes hero names using in-memory dictionary lookups (`Record<string, string>`) to eliminate data redundancy and strictly filters encounters involving the player's team. Correctly maps received damage from opponent statistics.
+  * `getEncounter(id)`: Parameterized endpoint `@Get('encounters/:encounterId')`. Validates team involvement and throws an explicit `NotFoundException` (404) if an unauthorized match ID is requested.
+* **Frontend (Angular):**
+  * Decoupled state management: Independent `status` (timeline) and `detailStatus` (selected match) to prevent layout flickering during asynchronous detail loading.
+  * `selectRound(index)`: Synchronous in-memory navigation across pre-fetched round payloads.
+  * `buildEventGroups()`: Algorithmic view formatter grouping primary `ACTION` events with immediate consequences (`DAMAGE`, `KO`, `HEAL`) into cohesive narrative logs without altering game logic.
 
-- **R1 — Héroes** — Provista por la cátedra
-- **R2 — Historia y Rivales** — Desarrollo individual
-- **R3 — Configurar Equipo** — Desarrollo individual
+R7 technical diagrams and documentation:
 
-### Camino
+* [R7 Internal Detailed Documentation (README)](https://github.com/Elianayc/Avengers-Multiversal-War/blob/main/frontend/avengers-front/src/app/features/journey/team-journey/README.md)
+* [Data Flow Diagram](./docs/R7/data_flow.png)
+* [Component Connections Mind Map](./docs/R7/mind_map.png)
 
-- **R4 — Simular Batallas** — Provista por la cátedra
-- **R5 — Fase de Grupos** — Desarrollo individual
-- **R6 — Fase Eliminatoria** — Desarrollo individual
-- **R7 — Camino del Equipo** — Desarrollo individual
+<p align="center">
+  <img src="./docs/R7/data_flow.png" alt="Data Flow R7" width="85%">
+</p>
 
-### Batalla Final
+### 2. R9 — Final Battle Engine
 
-- **R8 — Preparar Batalla Final** — Desarrollo individual
-- **R9 — Batalla Final** — Responsabilidad grupal
-- **R10 — Eventos en Vivo** — Desarrollo individual
-- **R11 — Estado del Equipo** — Desarrollo individual
+* **Scope:** Execute the tournament's decisive championship battle in real time through an interactive turn-based loop strictly governed by server-declared legal actions.
+* **Command Protocol & `actionId` Immutability:**
+  * Client fetches legal options (`GET .../actions`). Each action carries an opaque, cryptographic `actionId` generated by the Game API authority.
+  * Upon order confirmation, the client dispatches `POST .../play` with the exact token (`{ type: "CHOOSE_ACTION", actionId }`), avoiding client-side recalculations of costs or damage formulas.
+* **Battle Lifecycle Orchestration:**
+  * Strict lifecycle state machine: `READY` (awaiting initialization via `START`), `ACTIVE` (turn loop handling hero selection, ability execution, and legal targeting), and `COMPLETED` (terminal match resolution: `VICTORY`, `DEFEAT`, or `ABANDON`).
+  * Atomic Post-Action Refresh: Automated parallel queries syncing player team vitals, rival tactical conditions, and live combat narrative upon each resolved command.
 
-### Resultados
+R9 technical diagram:
 
-- **R12 — Estadísticas y Premios** — Desarrollo individual
-- **R13 — Historial** — Desarrollo individual
+* [Combat Data Flow](./docs/R9/data_flow.jpeg)
 
-En total:
+<p align="center">
+  <img src="./docs/R9/data_flow.jpeg" alt="Data Flow R9" width="85%">
+</p>
 
-```text
-13 funcionalidades
-=
-2 provistas por la cátedra
-+
-10 funcionalidades individuales
-+
-1 funcionalidad grupal
-```
+## Key BFF Endpoints
 
----
+| Module | Method | Endpoint | Response Model | Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| **R7** | `GET` | `/journey/team` | `ResponseObject<TeamJourneyModel>` | Journey summary, consolidated teams, and player timeline |
+| **R7** | `GET` | `/journey/team/encounters/:encounterId` | `ResponseObject<TeamJourneyDetailModel>` | Rounds, events, and narrative of the requested match |
+| **R9** | `GET` | `/final-battle/status` | `ResponseObject<FinalStageStatus>` | Final stage lifecycle state (READY / ACTIVE / COMPLETED) |
+| **R9** | `GET` | `/final-battle/actions` | `ResponseObject<LegalActions>` | Strict list of currently legal actions and authorized targets |
+| **R9** | `POST` | `/final-battle/play` | `ResponseObject<TurnOutcome>` | Command dispatch (`START`, `CHOOSE_ACTION`, `ABANDON`) |
+| **R9** | `GET` | `/final-battle/events` | `ResponseObject<CombatEvents>` | Live narrative stream and mechanical combat events |
 
-## Stack técnico
+## Tech Stack & Tooling
 
-| Capa | Tecnología | Puerto | URL base |
-| --- | --- | ---: | --- |
-| Frontend | Angular — `avengers-front` | `:3102` | `http://localhost:3102` |
-| Backend BFF | NestJS — `avengers-back` | `:4102` | `http://localhost:4102/gameCore` |
-| API | Avengers Game API — infraestructura externa de la cátedra | `:5102` | `http://localhost:5102/game` |
+* **Frontend:** Angular 17+, TypeScript, RxJS, Semantic HTML5, CSS Grid and Flexbox via custom design tokens.
+* **Backend:** NestJS, TypeScript, Axios / HttpModule, Swagger OpenAPI Decorators (`@nestjs/swagger`), Modular Architecture, Global Exception Filters.
+* **Code Standards:** Strict TypeScript typing (zero `any`), ESLint, Prettier, and SOLID principles.
 
-> **Avengers Game API es provista por la cátedra, permanece fuera de `students/`
-> y no debe modificarse.**
+## Local Setup & Execution
 
----
+1. Environment Configuration (`backend/avengers-back/.env`):
 
-## Requerimientos generales de la aplicación
+   ```env
+   PORT=3000
+   TEAM_ID=falcon
+   APP_LANG=en
+   GAME_API_BASE_URL=http://localhost:8080/game
+   ```
 
-- **Sin login.** La aplicación inicia directamente en la experiencia del Team asignado.
-- El Team del grupo se determina mediante `TEAM_ID`.
-- El **menú lateral (sidebar)** contiene las 13 funcionalidades del TP.
-- Cada funcionalidad es una vista independiente dentro de la aplicación.
-- El frontend Angular **nunca llama directamente a Avengers Game API**.
-- Todas las llamadas a Avengers Game API deben realizarse a través del BFF NestJS.
-- Avengers Game API mantiene la autoridad sobre las reglas, el estado y los resultados del juego.
-- Se debe respetar la arquitectura de los proyectos provista por la cátedra.
-- Se deben respetar el stack técnico y las tecnologías vistas durante la cursada.
-- Se debe conservar el sistema visual general y los assets provistos por la cátedra.
-- Las funcionalidades provistas sirven como referencia de arquitectura para desarrollar las restantes.
-
----
-
-## Configuración del Backend
-
-El Team asignado al grupo se configura mediante las variables de entorno del
-backend, antes de iniciar la aplicación.
-
-Copien el archivo de ejemplo:
-
-```bash
-cp backend/avengers-back/.env.example backend/avengers-back/.env
-```
-
-Configuración de referencia:
-
-```env
-APP_HOST=localhost
-APP_PORT=4102
-APP_BASE_PATH=gameCore
-CORS_ALLOWED_ORIGIN=http://localhost:3102
-GAME_API_URL=http://localhost:5102
-GAME_API_BASE_PATH=/game
-TEAM_ID=<id-del-personaje-asignado>
-APP_LANG=es
-```
+2. Run Backend:
 
-`TEAM_ID` corresponde al ID del personaje asignado al grupo. El Team se fija al
-iniciar el BFF y **no debe implementarse un selector de Team en el frontend**.
-
----
-
-## Cómo levantar el proyecto
-
-Los tres servicios deben levantarse en este orden:
-
-1. Avengers Game API oficial de la cátedra, desde su proyecto externo.
-2. Avengers backend.
-3. Avengers frontend.
-
-### 1. Avengers Game API
-
-El Game API se ejecuta desde el proyecto provisto por la cátedra, fuera de
-`students/`, según las instrucciones de la cursada.
-
-### 2. Avengers backend
-
-```bash
-cd backend/avengers-back
-npm install
-npm run start:dev
-```
-
-### 3. Avengers frontend
-
-```bash
-cd frontend/avengers-front
-npm install
-npm start
-```
-
-Verificar las aplicaciones y sus documentaciones Swagger en:
-
-- **Avengers frontend:** `http://localhost:3102`
-- **Avengers backend — Swagger:** `http://localhost:4102/gameCore/api`
-- **Avengers Game API — Swagger:** `http://localhost:5102/game/api`
+   ```bash
+   cd backend/avengers-back
+   npm install
+   npm run start:dev
+   ```
 
----
+3. Run Frontend:
 
-## Estructura del proyecto
+   ```bash
+   cd frontend/avengers-front
+   npm install
+   npm run start
+   ```
 
-```text
-students/
-├── frontend/
-│   └── avengers-front/
-│       └── src/app/
-│           ├── core/
-│           ├── shared/
-│           └── features/
-│               ├── team/
-│               │   ├── hero-roster/       ← R1 — Héroes (Provista)
-│               │   ├── history-rivals/    ← R2 — Historia y Rivales
-│               │   └── team-config/       ← R3 — Configurar Equipo
-│               ├── journey/
-│               │   ├── simulate-journey/  ← R4 — Simular Batallas (Provista)
-│               │   ├── group-stage/       ← R5 — Fase de Grupos
-│               │   ├── knockout-stage/    ← R6 — Fase Eliminatoria
-│               │   └── team-journey/      ← R7 — Camino del Equipo
-│               ├── final-battle/
-│               │   ├── final-preparation/ ← R8 — Preparar Batalla Final
-│               │   ├── final-battle/      ← R9 — Batalla Final (Grupal)
-│               │   ├── live-events/       ← R10 — Eventos en Vivo
-│               │   └── team-status/       ← R11 — Estado del Equipo
-│               └── results/
-│                   ├── awards/            ← R12 — Estadísticas y Premios
-│                   └── history/           ← R13 — Historial
-├── backend/
-│   └── avengers-back/
-│       └── src/
-│           ├── basic/
-│           ├── team/
-│           ├── journey/
-│           ├── final-battle/
-│           └── results/
-└── README.md
-```
+## Academic Documentation
 
-Cada funcionalidad sigue el patrón general de las referencias provistas:
+All original documentation provided by the Programming III faculty (UTN), assignments, technical specifications, and the institutional team README are archived under `docs/academic/`:
 
-```text
-Angular:
-model → service → component
-
-NestJS:
-controller → service
-```
-
----
-
----
-
-## Entregables
-
-1. **Repositorio del grupo** con `avengers-front` y `avengers-back`.
-2. **El proyecto debe instalar, compilar y ejecutarse correctamente** utilizando los comandos definidos por los proyectos.
-3. **R1 — Héroes y R4 — Simular Batallas no deben modificarse.** Son las referencias de arquitectura provistas por la cátedra.
-4. **Avengers Game API no debe modificarse.** El TP será evaluado utilizando la versión oficial provista por la cátedra.
-5. **Cada integrante debe tener implementada, integrada y funcionando su funcionalidad individual asignada.**
-6. **R9 — Batalla Final debe estar integrada y poder jugarse de principio a fin sin errores.** Es obligatoria para la aprobación del TP y responsabilidad de todo el grupo.
-7. **Este README debe estar actualizado** con:
-   - TEAM_ID / Team asignado.
-   - Nombre del Tech Lead.
-   - Nombre de los 10 integrantes.
-   - Funcionalidad individual asignada a cada integrante.
-8. El proyecto completo debe funcionar integrado contra **Avengers Game API**.
-
----
-
-## Documentación de cambios R11:
-Checkpoint 2 — R11: Se implementó el endpoint GET /gameCore/final-stage/status y su consumo desde el Service de Angular. La solicitud del Frontend no requiere body ni parámetros; el Backend obtiene el equipo y el idioma de su configuración y consulta la Game API enviando lang. Se verificó una respuesta HTTP 200 con el envoltorio estándar y datos reales descritos por FinalStageStateApi, su visualización en pantalla y la ausencia de errores en consola. También se verificó que el Backend informa JOURNEY_REQUIRED cuando no existe un Journey. Angular dispone de un mensaje genérico ante errores de consulta. Ambos proyectos compilan. El alcance actual incluye el estado general de la Final; los equipos y sus recursos quedan pendientes para completar R11.
-
-Checkpoint 3 — R11: Se amplió `GET /gameCore/final-stage/status` para combinar el estado general de la Final, los datos tácticos de ambos equipos y los nombres del catálogo de héroes. La respuesta contiene `finalStage` y `teams`; cuando los equipos todavía no están disponibles, `teams` es `null`.
-
-La pantalla Angular reemplaza el JSON por una vista con HTML semántico y CSS propio adaptable. Muestra ambos equipos, héroes agrupados por formación, líderes, condición, energía, puntos de habilidad, estrategia, sinergia y recursos tácticos publicados por la Game API.
-
-Se incorporaron actualización manual, estados de carga, error y ausencia de Journey, mensajes de espera de inicio y presentación del resultado terminal. Las etiquetas utilizan el servicio de localización del proyecto.
-
-Se verificaron una Final activa, una Final completada por abandono,
-una Final pendiente de inicio y la recuperación ante una interrupción
-de conexión. Ambos proyectos compilan y las 15 pruebas existentes de
-Angular pasan. Los checks de lint del Frontend y del Backend finalizaron sin errores. El script de test del Backend ejecuta su compilación.
-
-R11 conserva un alcance de consulta: las reglas, acciones legales y
-resultados permanecen bajo la autoridad de la Game API.
-
-## Documentación de cambios R13:
-Checkpoint 3 — R13: Armé el historial de Caminos en `Resultados → Historial de Batallas`. La pantalla tiene una lista y, al elegir un Camino, una vista con todo su detalle. El Frontend le habla solo a mi Backend, y el Backend le pregunta a la Game API pasándole `lang`. El equipo y el idioma los saca de su configuración, así que no mando nada en el body.
-
-Hice dos endpoints en el Backend, los dos de lectura:
-
-- `GET /gameCore/results/history`: devuelve la lista de Caminos completados, del más nuevo al más viejo. Trae `summary` (cuántos Caminos hubo y cuántas victorias, derrotas y abandonos) e `items`, con las fechas, la estrategia de gasto, el rival final, el resultado y el texto del desenlace, tal cual los manda la Game API.
-- `GET /gameCore/results/history/:attemptId`: devuelve el detalle de un Camino. Pide en paralelo el resumen, los equipos, los eventos y las estadísticas, y responde con `summary`, `teams`, `teamNames`, `events` y `statistics`. Dejé solo a los dos equipos finalistas. Si las estadísticas no están disponibles, `statistics` viene en `null` y el detalle se muestra igual.
-
-En Angular, la lista muestra los totales arriba y un botón en cada Camino para ver su detalle. El detalle muestra el resumen del Camino, la batalla final con los dos equipos y sus héroes, las estadísticas, los premios y el registro de eventos. Los eventos se muestran de a 50 con el botón "Ver más". Los devuelve todos juntos la Game API, que no pagina, así que el corte lo hago yo en el Frontend. El botón "Volver al historial" regresa a la lista.
-
-Las dos vistas tienen estado de carga, de error (con botón para reintentar) y de datos, y la lista tiene además el estado vacío. Los errores los muestro según `messageCode`, nunca según el texto de `message`. Todos los textos salen del servicio de localización del proyecto, con las claves `r13.*` en español e inglés. Los resultados (victoria, derrota o abandono) los informa la Game API y no los calculo yo.
-
-Probé la lista y el detalle de un Camino abandonado contra la Game API real, y también los botones "Ver más" y "Volver al historial". Los archivos de R13 del Frontend y del Backend pasan el lint sin errores y los dos proyectos compilan.
-
-*Programación III — UTN — 2026*
+* [Original Academic README](./docs/academic/README.academic.md)
+* [Official Assignment Specification V2 (PDF)](./docs/academic/AVENGERS_MULTIVERSAL_WAR_ENUNCIADO_V2.pdf)
+* [Official Technical Guide V2 (PDF)](./docs/academic/AVENGERS_MULTIVERSAL_WAR_GUIA_TECNICA_V2.pdf)
+* [Technical Requirements & Rubric V2 (PDF)](./docs/academic/AVENGERS_MULTIVERSAL_WAR_REQUERIMIENTOS_TECNICOS_V2.pdf)
